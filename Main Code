@@ -1,0 +1,999 @@
+// Andromeda by Smart Tech Productions
+// Made by Aneri Bhuptani, Manan Shah
+// Class XII C, Batch:2019-20
+#include<fstream.h>
+#include<ctype.h>
+#include<conio.h>
+#include<graphics.h>
+#include<dos.h>
+#include<stdlib.h>
+#include<time.h>
+#include<string.h>
+#include<string.h>
+#include<bios.h>
+#include<stdio.h>
+
+//-----------Functions-----------//
+void title();
+void MyShip (int y,const int z);
+
+void menu();
+void productions();
+void symbol();
+void credits();
+void instructions();
+void EnemyUp(int x,int y);
+void logic();
+int down();
+int blast();
+
+//-----------Global variables-----------//
+int midx=getmaxx()/2 , midy=getmaxy()/2 , i;
+int MyScore=0;
+int b1 , a1 , b2 , a2;
+int EnemyHit1=0 , EnemyHit2=0 , EnemyHit3=0;
+const int sz=50;
+int flag=0 , flag1=0;
+int a , b=450 , j , x=0 , last=0;
+int xp[sz] , yp[sz];     //bullet
+
+int key, one=561 , two=818 , three=1075 , four=1332 , five=1589 , esc=283 , bkspace=3592;
+
+
+//class for Addding,recording and storing scores of player
+class hiscr
+{
+	protected:
+	char name[25];
+	int score;
+
+	public:
+	void getdata();
+	void add();
+	void record();
+
+}hi , obj;
+
+// Method of class to add & store scores of player in a file
+void hiscr::add()
+{
+	cleardevice();
+	fstream fin,fout;
+
+	score=MyScore;
+	fin.open("hiscore.txt",ios::in|ios::out);//open file in input mode
+	fin.seekg(0);//set file pointer to first object
+	fout.open("temp.txt",ios::out);//open temporary file
+	fin.read((char*)&obj,sizeof(obj));
+
+	while(!fin.eof())
+	{
+		if(obj.score>=score)
+		{
+			fout.write((char*)&obj,sizeof(obj));
+		}
+		if(obj.score<score)
+		{
+			x=fin.tellg();
+			break;
+		}
+		fin.read((char*)&obj,sizeof(obj));
+	}
+
+	getdata();
+	fout.write((char*)&hi,sizeof(hi));
+	fin.seekg(x);
+	while(!fin.eof())
+	{
+		fout.write((char*)&obj,sizeof(obj));
+		fin.read((char*)&obj,sizeof(obj));
+	}
+
+	fin.close();
+	fout.close();
+	remove("hiscore.txt");//delete old file
+	rename("temp.txt","hiscore.txt");//rename temporary file as master file
+}
+
+// Method of class to get Name of player
+void hiscr::getdata()
+{
+	cleardevice();
+	setcolor(7);
+	settextstyle(1,0,4);
+	outtextxy(245,180,"Enter Name");
+	gotoxy(305,250);
+	cin>>name;
+	score=MyScore;
+}
+
+// Method of class to record and display leaderboard
+void hiscr::record()
+{
+	cleardevice();
+	int n,midxx=getmaxx()/2;
+
+
+	for(i=0;i<10000;i++)
+	{
+		putpixel(random(1000),random(1000),random(1000));
+	}
+
+
+	setcolor(RED);
+	settextstyle(0,0,4);
+	outtextxy(midxx-187,4,"HALL OF FAME");
+
+	setcolor(CYAN);
+	settextstyle(0,0,4);
+	outtextxy(midxx-190,6,"HALL OF FAME");
+
+	settextstyle(3,0,2);
+	setcolor(CYAN);
+	outtextxy(midxx+230,5,"Menu");
+	outtextxy(midxx+218,27,"(press ");
+	outtextxy(midxx+210,47,"backspace)");
+
+	fstream fin;
+	fin.open("hiscore.txt",ios::in);//open file
+	if(fin.fail())
+	{
+		cout<<"FILE NOT FOUND";
+		getch();
+		menu();
+	}
+
+	// number of records
+	fin.seekg(0,ios::end);
+	n=fin.tellg()/sizeof(hi);
+	if(n>10)  //to display only top 10 scores
+	{
+		n=10;
+	}
+
+	setcolor(6);
+	settextstyle(1,0,1);
+	outtextxy(160,70,"\t\t\t  Name");
+	outtextxy(370,70," \t\t\tScore\n");
+	cout<<"\n\n\n\n\n";
+
+	//fin.seekg(0,ios::beg);//set file pointer to the beginning
+	for(int j=0;j<n;j++)
+	{
+		cout<<endl;
+		fin.read((char*)&hi,sizeof(hi));
+		cout<<"\t\t\t"<<name<<"\t\t\t"<<score<<'\n';
+		last=score;   //to store the last highscore
+	}
+
+	fin.close();
+
+
+
+
+	for (i=0;;i++)
+	{
+		while (bioskey(1)==0);
+		key=bioskey(0);
+
+		if (key==bkspace)
+		{
+			menu();
+		}
+	}
+}
+
+
+void main()
+{
+	/* request auto detection */
+	int gdriver = DETECT, gmode, errorcode;
+	/* initialize graphics and local variables */
+	initgraph(&gdriver, &gmode, "C:\\turboc3\\bgi");
+
+	cleardevice();
+	randomize();
+
+	productions();
+	symbol();
+	title();
+	menu();
+
+}
+
+
+// Funtion to initiate and start the game
+void playGame()
+{
+	cleardevice();
+	char ch;
+
+	for(i=0;i<sz;i++)
+	{
+		xp[i]=0;
+	}
+
+	MyShip(x,22);
+	setcolor(CYAN);
+	rectangle(0,0,639,500);
+	rectangle(475,0,475,500);
+
+	setcolor(3);
+	settextstyle(0,0,2);
+	outtextxy(490,60,"Score");
+
+	settextstyle(3,0,2);
+	outtextxy(490,360,"Menu (press x)");
+
+
+	setcolor(RED);
+	setfillstyle(SOLID_FILL,RED);
+	rectangle(455,55,475,59);
+	floodfill(460,57,RED);
+
+	while(b>-150)
+	{
+		while(!kbhit()) //Goes infinitely until a key is pressed
+		{
+			down();
+			EnemyUp(60,b);
+			delay(40);
+			b--;
+			blast();
+
+			if(flag1==1)
+			{
+				MyScore+=30;
+				setcolor(14);
+				settextstyle(0,0,3);
+				outtextxy(midx+150,midy+200,"Game Over!!");
+				setcolor(CYAN);
+				settextstyle(0,0,2);
+				outtextxy(midx+185,midy+250,"YOU WON");
+				getch();
+				break;
+			}
+			if(flag==1)
+			{
+				MyScore-=30;
+				setcolor(14);
+				settextstyle(0,0,3);
+				outtextxy(midx+150,midy+200,"Game Over!!");
+				break;
+
+			}
+
+	       }
+	       if (flag==1 || flag1==1 ) break;
+
+
+		ch=getch();
+		switch(tolower(ch))
+		{
+			case ' ' : for(i=0;i<sz;i++)   //to fire bullet
+				   {
+					if(xp[i]==0)
+					{
+						xp[i]=x+55;
+						yp[i]=57;
+						break;
+					}
+
+				   }
+				   break;
+			case 0 :   ch=getch();          //to move ship left or right
+				   if(ch==75  && x>0)   //75 for left key
+				   {
+					x-=1;
+
+					MyShip(x,22);
+				   }
+				   else if(ch==77 && x<600) //77 for right key
+				   {
+					x+=1;
+					MyShip(x,22);
+				   }
+
+
+				   break;
+			case 'x':  menu();             //to return to menu
+				   break;
+		}
+
+	}
+
+	hi.add();
+	hi.record();
+}
+
+
+// Function regarding animation of title page
+void title()
+{
+	cleardevice();
+	int y=0,z;
+
+	settextstyle(0,0,5);
+	setcolor(14);
+	outtextxy(midx+125,midy+200,"ANDROMED");
+	outtextxy(midx+450,midy+200,"A");
+	for(y=0;y<=406;y++)
+	{
+		MyShip(y,90);
+	}
+	//abduction
+	setcolor(3);
+	for(int i=0,j=0;i<midy+200,j<30;j++,i+=3)
+	{
+		putpixel(466-j,110+i,3);
+		putpixel(466+j,110+i,3);
+		delay(50);
+	}
+	setfillstyle(CLOSE_DOT_FILL,11);
+	fillellipse(60+406,90,20,20);
+
+	setfillstyle(SOLID_FILL,10);
+	fillellipse(60+406,110,40,15);
+	setcolor(YELLOW);
+	for(i=0;i<40;i++)
+	{
+		setcolor(YELLOW);
+		outtextxy(midx+450,midy+200-i,"A");
+		delay(100);
+
+		setcolor(0);
+		outtextxy(midx+450,midy+200-i,"A");
+	}
+	delay(1000);
+
+}
+
+// Fuction to create shape of Player's ship
+void MyShip(int y,const int z)
+{
+
+	setcolor(0);
+	setfillstyle(CLOSE_DOT_FILL,11);
+	fillellipse(60+y,z,20,20);
+
+	setfillstyle(SOLID_FILL,10);
+	fillellipse(60+y,z+20,40,15);
+
+	setcolor(BLACK);
+	delay(5);
+
+
+}
+
+// Function to display main menu
+void menu()
+{
+	cleardevice();
+
+	settextstyle(0,0,5);
+	for(i=0;i<10000;i++)
+	{
+		putpixel(random(1000),random(1000),random(1000));
+	}
+	setcolor(YELLOW);
+	outtextxy(150,30,"Andromeda");
+	delay(100);
+
+	setfillstyle(WIDE_DOT_FILL,0);
+	fillellipse(300,120,30,30);
+	setfillstyle(SOLID_FILL,10);
+	fillellipse(300,140,50,20);
+
+	line(300,140,0,400);
+	line(300,140,600,400);
+	setfillstyle(WIDE_DOT_FILL,0);
+	fillellipse(300,120,30,30);
+	setfillstyle(SOLID_FILL,10);
+	fillellipse(300,140,50,20);
+	settextstyle(0,0,2);
+	outtextxy(210,230,"1.start game");
+	outtextxy(210,260,"2.how to play");
+	outtextxy(210,290,"3.credits");
+	outtextxy(210,320,"4.Hi-score");
+	outtextxy(210,350,"5.exit");
+	delay(100);
+
+	for (i=0;;i++)
+	{
+		while (bioskey(1)==0);
+		key=bioskey(0);
+
+		if (key==one)
+		{
+			playGame();
+		}
+		else if (key==two)
+		{
+			instructions();
+		}
+		else if (key==three)
+		{
+			credits();
+		}
+		else if (key==four)
+		{
+			hi.record();
+		}
+		else if (key==five || key==esc)
+		{
+			closegraph();
+			exit(0);
+		}
+	}
+}
+
+// Production Page
+void productions()
+{
+	int w,r,s;
+	randomize();
+	//background
+	for(int h=0;h<=1000;h++)
+	   {
+		   w=random(getmaxx());
+		   r=random(getmaxy());
+		   s=random(16);
+		   putpixel(w,r,s);
+	     }
+
+	//elliptical shape
+	for(int color=1;color<=15;color++)
+	{
+		setcolor(color);
+
+		for(int a=0;a<=4;a++)
+		{
+			line(100,60+a,540,60+a);
+			line(100,200+a,540,200+a);
+		}
+
+		for(a=0;a<=4;a++)
+		{
+			arc(100,130+a,90,270,70);
+			arc(540,130+a,270,90,70);
+
+		}
+		delay(100);
+	}
+	//productions' name
+	setcolor(WHITE);
+	settextstyle(0,0,4);
+	outtextxy(240,20,"Smart");
+
+	//T
+	for(int z=135;z<=190;z+=5)
+	{
+		bar(135,85,150,z);
+		delay(30);
+	}
+
+	for(z=88;z<=190;z+=5)
+	{
+		 bar(88,75,z,90);
+		delay(30);
+	 }
+
+	//E
+	for(z=135;z<=190;z+=5)
+	{
+		bar(210,75,225,z);
+		delay(30);
+	}
+
+	for(z=220;z<=280;z+=5)
+	{
+		bar(220,75,z,90);
+		delay(30);
+	}
+
+	for(z=220;z<=260;z+=5)
+	{
+		bar(220,120,z,135);
+		delay(30);
+	}
+
+	for(z=220;z<=280;z+=5)
+	{
+		bar(220,175,z,190);
+		delay(30);
+	 }
+
+	//C
+	 for(z=320;z<=400;z+=5)
+	  {
+		bar(310,75,z,90);
+		delay(30);
+	}
+
+	for(z=135;z<=190;z+=5)
+	 {
+		bar(310,75,325,z);
+		delay(30);
+	 }
+
+	for(z=320;z<=400;z+=5)
+	{
+		bar(320,175,z,190);
+		delay(30);
+	}
+
+	//H
+	for(z=125;z<=190;z+=5)
+	{
+		bar(420,75,435,z);
+		delay(30);
+	}
+
+	for(z=440;z<=500;z+=5)
+	{
+		bar(420,120,z,135);
+		delay(30);
+	}
+
+	for(z=125;z<=190;z+=5)
+	{
+		bar(500,75,515,z);
+		delay(30);
+	  }
+
+	setcolor(YELLOW);
+	settextstyle(2,0,9);
+	outtextxy(335,195,"Productions");
+
+	settextstyle(2,0,7);
+	outtextxy(355,225,"Presents");
+	delay(1000);
+
+}
+
+// Lightining the bulb effect with this function
+void symbol()
+{
+	int i,l;
+	setbkcolor(0);
+	setfillstyle(SOLID_FILL,15);
+
+	fillellipse(299,298,70,70);
+	//floodfill(350,220,YELLOW);
+	for(l=40;l<=70;l++)
+	{
+		setcolor(15);
+		rectangle(234+l,325+l,364-l,240+l);
+		//delay(20);
+	}
+
+	for(l=1;l<=20;l++)
+	{
+		setcolor(11);
+		rectangle(270+l,375+l,330-l,410+l+10);
+		delay(20);
+	}
+
+	line(295,440,295,470);
+	line(305,440,305,470);
+	delay(50);
+	line(295,470,20,470);
+	line(305,470,580,470);
+	for(int h=0;h<=275;h++)
+	{
+		setcolor(14);
+		line(20+h+1,460,20+h+1,510);
+		line(580-h-1,460,580-h-1,510);
+		delay(20);
+	}
+
+	setfillstyle(SOLID_FILL,YELLOW);
+	fillellipse(299,298,70,70);
+	for(l=40;l<=70;l++)
+	{
+		setcolor(YELLOW);
+		rectangle(234+l,325+l,364-l,240+l);
+		setbkcolor(15);
+	}
+
+	for(l=1;l<=20;l++)
+	{
+		setcolor(11);
+		rectangle(270+l,375+l,330-l,410+l+10);
+	}
+	delay(2000);
+	cleardevice();
+	setbkcolor(15);
+	delay(10);
+	setbkcolor(0);
+}
+
+// Credits page
+void credits()
+{
+	cleardevice();
+	int i,midxx=getmaxx()/2,midyy=getmaxy()/2;
+	floodfill(100,100,BLACK);
+	setbkcolor(BLACK);
+
+	for( i=0;i<10000;i++)
+	putpixel(random(1000),random(1000),random(1000));
+	setcolor(YELLOW);
+	setfillstyle(SOLID_FILL,YELLOW);
+
+	arc(200,200,90,270,120);
+	line(200,320,500,300);
+	line(200,80,500,60);
+	line(500,60,420,130);
+	line(420,130,560,150);
+	line(560,150,420,200);
+	line(420,200,540,230);
+	line(540,230,440,260);
+	line(440,260,500,300);
+
+	floodfill(450,300,YELLOW);
+
+	setcolor(3);
+	setfillstyle(SOLID_FILL,WHITE);
+	fillellipse(200,200,100,100);
+	floodfill(201,105,WHITE);
+
+	settextstyle(0,0,1);
+	outtextxy(130,140,"Created by:");
+
+	settextstyle(0,0,2);
+	outtextxy(120,180,"Manan S.");
+
+	outtextxy(120,220,"Aneri B.");
+
+	settextstyle(10,0,4);
+	setcolor(GREEN);
+	outtextxy(midxx-260,midyy+70,"SPECIAL THANKS TO:");
+	setcolor(CYAN);
+	outtextxy(midxx-170,midyy+120,"SMRITI MA'AM");
+
+	settextstyle(3,0,2);
+	setcolor(CYAN);
+	outtextxy(midxx+230,5,"Menu");
+	outtextxy(midxx+218,27,"(press ");
+	outtextxy(midxx+210,47,"backspace)");
+
+
+
+	for (i=0;;i++)
+	{
+		while (bioskey(1)==0);
+		key=bioskey(0);
+
+		if (key==bkspace)
+		{
+			menu();
+		}
+	}
+
+}
+
+//Instruction Page
+void instructions()
+{
+	int midxx=getmaxx()/2,midyy=getmaxy()/2;
+
+	cleardevice();
+	settextstyle(0,0,4);
+	setcolor(CYAN);
+	outtextxy(midxx-187,4,"INSTRUCTIONS");
+
+	settextstyle(0,0,4);
+	setcolor(RED);
+	outtextxy(midxx-190,4,"INSTRUCTIONS");
+
+
+
+	settextstyle(3,0,3);
+	setcolor(RED);
+	outtextxy(midxx-310,midyy-170,"OBJECTIVE:-");
+
+	 settextstyle(3,0,2);
+	setcolor(YELLOW);
+	outtextxy(midxx-310,midyy-145,"*The objective of the game is to kill all invaders and score ");
+
+	outtextxy(midxx-310,midyy-125," high");
+
+	 settextstyle(3,0,3);
+	 setcolor(RED);
+	outtextxy(midxx-310,midyy-92,"HOW TO PLAY:-");
+
+	settextstyle(3,0,2);
+	setcolor(YELLOW);
+	outtextxy(midxx-310,midyy-70,"*Use arrow keys to move the ship left or right.");
+
+	outtextxy(midxx-310,midyy-50,"*Aim at the enemy and press spacebar to fire.");
+
+	outtextxy(midxx-310,midyy-30,"*Enemy ship disappears once the bullet hits.");
+
+	outtextxy(midxx-310,midyy-10,"*The player has to continue the same and kill all the enemies.");
+	outtextxy(midxx-310,midyy+10,"*if the enemy crosses the red mark before getting killed ");
+	outtextxy(midxx-310,midyy+30," then the player loses the game.");
+
+
+	settextstyle(3,0,3);
+	setcolor(RED);
+	 outtextxy(midxx-310,midyy+60,"WINNING THE GAME:-");
+
+	settextstyle(3,0,2);
+	setcolor(YELLOW);
+	outtextxy(midxx-310,midyy+88,"*Once all the enemies are killed the player wins.");
+
+	settextstyle(3,0,3);
+	setcolor(RED);
+	outtextxy(midxx-310,midyy+125,"HOW YOU WILL BE SCORED:-");
+
+	settextstyle(3,0,2);
+	setcolor(YELLOW);
+	outtextxy(midxx-310,midyy+150,"*For every enemy kill the player receives 50 points.");
+	outtextxy(midxx-310,midyy+170,"*If you win the game a bonus of 30 points will be ");
+	outtextxy(midxx-310,midyy+190,"added to your total score. ");
+	outtextxy(midxx-310,midyy+210,"*But if you lose the game 30 points will be deducted");
+	outtextxy(midxx-310,midyy+330,"from your total score. ");
+
+
+	settextstyle(3,0,2);
+	setcolor(CYAN);
+	outtextxy(midxx+230,5,"Menu");
+	outtextxy(midxx+218,27,"(press ");
+	outtextxy(midxx+210,47,"backspace)");
+
+
+
+	for (i=0;;i++)
+	{
+		while (bioskey(1)==0);
+		key=bioskey(0);
+
+		if (key==bkspace)
+		{
+			menu();
+		}
+	}
+}
+
+// Down function for bullet
+int down()
+{
+      int z,l;
+	setcolor(3);
+	for(i=0;i<sz;i++)
+	{   	setcolor(3);
+		settextstyle(0,0,1);
+
+		if(xp[i]!=0) //if 0 bullet won't be fired
+		{
+			//for shape of bullet
+			if(yp[i]!=1)
+			outtextxy(xp[i],yp[i]+4,"");
+
+			setcolor(0);
+			outtextxy(xp[i],yp[i],"");
+			yp[i]++;
+
+		}
+
+		z=yp[i];
+		l=xp[i];
+
+		//to match coordinates of bullet & invaders and kill the enemy
+		if(z>=b && (l>=55 && l<=75))
+		{
+			EnemyHit1=1;
+			setcolor(BLACK);
+			setfillstyle(SOLID_FILL,BLACK);
+			bar3d(50,b-15,85,b+60,0,0);
+			//to disapper bullet
+			xp[i]=0;
+			yp[i]=0;
+
+			MyScore+=50;
+
+			setcolor(YELLOW);
+			settextstyle(0,0,2);
+			char msg[10];
+			sprintf(msg,"%d",MyScore);
+			outtextxy(490,85,msg);
+		}
+		else if(z>=b+100 && (l>=255 && l<=275))
+		{
+			EnemyHit2=1;
+			setcolor(BLACK);
+			setfillstyle(SOLID_FILL,BLACK);
+			bar3d(250,b+100-15,285,b+100+60,0,0);
+			xp[i]=0;
+			yp[i]=0;
+
+			MyScore+=50;
+
+			setcolor(BLACK);
+			bar3d(482,80,600,105,0,0);
+
+			setcolor(YELLOW);
+			settextstyle(0,0,2);
+			char msg[10];
+			sprintf(msg,"%d",MyScore);
+			outtextxy(490,85,msg);
+		}
+		else if(z>=b+200 && (l>=355 && l<=375))
+		{
+			EnemyHit3=1;
+			setcolor(BLACK);
+			setfillstyle(SOLID_FILL,BLACK);
+			bar3d(350,b+200-15,385,b+200+60,0,0);
+			xp[i]=0;
+			yp[i]=0;
+
+			MyScore+=50;
+
+			setcolor(BLACK);
+			bar3d(482,80,600,105,0,0);
+
+
+			setcolor(YELLOW);
+			settextstyle(0,0,2);
+			char msg[10];
+			sprintf(msg,"%d",MyScore);
+			outtextxy(490,85,msg);
+
+		}
+
+	}
+
+	return 0;
+}
+
+// function for effect of explosion
+void explode(int x,int y)//used to construct and display the explosion
+{
+	setcolor(0);
+	setfillstyle(1,YELLOW);
+	fillellipse(x,y,30,30);
+	setfillstyle(1,BROWN);
+
+	setcolor(RED);
+	ellipse(x,y,0,360,43,8);
+	setcolor(YELLOW);
+	ellipse(x,y,0,360,63,13);
+	setfillstyle(1,WHITE);
+	fillellipse(x,y,35,5);
+	setfillstyle(1,0);
+	fillellipse(x,y,20,20);
+	delay(10);
+	setcolor(0);
+	setfillstyle(1,0);
+	fillellipse(x,y,70,70);
+}
+
+// function to apply explode() at right time in correct place
+int blast()
+{
+	if(EnemyHit3==0 && b+200<=57 && EnemyHit1==1 && EnemyHit2==1)
+	{
+		flag=1;
+		delay(50);
+		explode(x+55+3,b+200+3);
+		delay(50);
+		explode(x+55-3,b+200+6);
+		delay(50);
+		explode(x+55+2,b+200-7);
+		delay(50);
+		setfillstyle(1,15);
+		fillellipse(320,240,500,500);
+		delay(50);
+		setfillstyle(1,0);
+		fillellipse(320,240,500,500);
+		delay(50);
+		b=-400;
+		cleardevice();
+
+	}
+
+
+	if(EnemyHit2==0 && b+100<=57 && EnemyHit1==1)
+	{
+		flag=1;
+		delay(50);
+		explode(x+55+3,b+100+3);
+		delay(50);
+		explode(x+55-3,b+100+6);
+		delay(50);
+		explode(x+55+2,b+100-7);
+		delay(50);
+		setfillstyle(1,15);
+		fillellipse(320,240,500,500);
+		delay(50);
+		setfillstyle(1,0);
+		fillellipse(320,240,500,500);
+		delay(50);
+		b=-400;
+		cleardevice();
+
+	}
+
+	 if(EnemyHit1==0 && b<=57)
+	{
+		flag=1;
+		delay(50);
+		explode(x+55+3,b+3);
+		delay(50);
+		explode(x+55-3,b+6);
+		delay(50);
+		explode(x+55+2,b-7);
+		delay(50);
+		setfillstyle(1,15);
+		fillellipse(320,240,500,500);
+		delay(50);
+		setfillstyle(1,0);
+		fillellipse(320,240,500,500);
+		delay(50);
+		b=-400;
+		cleardevice();
+
+	}
+
+	if(EnemyHit1==1 && EnemyHit2==1 && EnemyHit3==1)
+	{
+		delay(60);
+		cleardevice();
+		flag=1;
+		flag1=1;
+	}
+	return flag,flag1;
+}
+
+// For ascend of enemies
+void EnemyUp(int a,int b)
+{
+
+	b1=b+100;
+	a1=a+200;
+	b2=b1+100;
+	a2=a1+100;
+
+	if(EnemyHit1==0)
+	{
+	setcolor(15);
+	rectangle(a,b,a+10,b+10);
+	rectangle(a+2,b,a+8,b-5);
+	rectangle(a-2,b+10,a+12,b+25);
+
+	setcolor(0);
+	rectangle(a,b+40,a+10,b+10+40);
+	rectangle(a+8,b-5+40,a+2,b+40);
+	rectangle(a-2,b+10+40,a+12,b+25+40);
+	}
+
+	if(EnemyHit2==0)
+	{
+	setcolor(15);
+	rectangle(a1,b1,a1+10,b1+10);
+	rectangle(a1+2,b1,a1+8,b1-5);
+	rectangle(a1-2,b1+10,a1+12,b1+25);
+
+	setcolor(0);
+	rectangle(a1,b1+40,a1+10,b1+10+40);
+	rectangle(a1+8,b1-5+40,a1+2,b1+40);
+	rectangle(a1-2,b1+10+40,a1+12,b1+25+40);
+	}
+
+	if(EnemyHit3==0)
+	{
+	setcolor(15);
+	rectangle(a2,b2,a2+10,b2+10);
+	rectangle(a2+2,b2,a2+8,b2-5);
+	rectangle(a2-2,b2+10,a2+12,b2+25);
+
+	setcolor(0);
+	rectangle(a2,b2+40,a2+10,b2+10+40);
+	rectangle(a2+8,b2-5+40,a2+2,b2+40);
+	rectangle(a2-2,b2+10+40,a2+12,b2+25+40);
+	}
+
+}
+
